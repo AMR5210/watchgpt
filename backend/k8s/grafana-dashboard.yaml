@@ -1,0 +1,105 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-json
+  namespace: watchgpt
+data:
+  watchgpt.json: |
+    {
+      "title": "WatchGPT Backend",
+      "uid": "watchgpt-main",
+      "timezone": "browser",
+      "refresh": "10s",
+      "time": {"from": "now-1h", "to": "now"},
+      "panels": [
+        {
+          "id": 1,
+          "title": "Request Rate (req/s)",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+          "targets": [{
+            "expr": "sum(rate(http_requests_total{path!=\"/metrics\"}[1m]))",
+            "legendFormat": "Total req/s"
+          }],
+          "fieldConfig": {"defaults": {"unit": "reqps"}}
+        },
+        {
+          "id": 2,
+          "title": "Request Duration (p50 / p95 / p99)",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+          "targets": [
+            {"expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p50"},
+            {"expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95"},
+            {"expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p99"}
+          ],
+          "fieldConfig": {"defaults": {"unit": "s"}}
+        },
+        {
+          "id": 3,
+          "title": "Error Rate",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 6, "x": 0, "y": 8},
+          "targets": [{
+            "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m])) * 100"
+          }],
+          "fieldConfig": {"defaults": {"unit": "percent", "thresholds": {"steps": [{"value": 0, "color": "green"}, {"value": 1, "color": "yellow"}, {"value": 5, "color": "red"}]}}}
+        },
+        {
+          "id": 4,
+          "title": "In-Flight Requests",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 6, "x": 6, "y": 8},
+          "targets": [{"expr": "http_requests_in_flight"}]
+        },
+        {
+          "id": 5,
+          "title": "OpenAI Latency (seconds)",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+          "targets": [
+            {"expr": "histogram_quantile(0.50, rate(watchgpt_openai_request_duration_seconds_bucket[5m]))", "legendFormat": "p50"},
+            {"expr": "histogram_quantile(0.95, rate(watchgpt_openai_request_duration_seconds_bucket[5m]))", "legendFormat": "p95"}
+          ],
+          "fieldConfig": {"defaults": {"unit": "s"}}
+        },
+        {
+          "id": 6,
+          "title": "OpenAI Success vs Error",
+          "type": "piechart",
+          "gridPos": {"h": 4, "w": 6, "x": 0, "y": 12},
+          "targets": [{
+            "expr": "sum(watchgpt_openai_requests_total) by (status)",
+            "legendFormat": "{{status}}"
+          }]
+        },
+        {
+          "id": 7,
+          "title": "Active Conversations",
+          "type": "stat",
+          "gridPos": {"h": 4, "w": 6, "x": 6, "y": 12},
+          "targets": [{"expr": "watchgpt_active_conversations"}]
+        },
+        {
+          "id": 8,
+          "title": "HTTP Status Breakdown (req/s)",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+          "targets": [{
+            "expr": "sum(rate(http_requests_total{path!=\"/metrics\"}[1m])) by (status)",
+            "legendFormat": "{{status}}"
+          }]
+        },
+        {
+          "id": 9,
+          "title": "Image Size Distribution",
+          "type": "histogram",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+          "targets": [{
+            "expr": "sum(rate(watchgpt_image_size_bytes_bucket[5m])) by (le)",
+            "format": "heatmap"
+          }],
+          "fieldConfig": {"defaults": {"unit": "bytes"}}
+        }
+      ]
+    }
