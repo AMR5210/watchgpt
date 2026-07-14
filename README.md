@@ -34,6 +34,10 @@ The system runs on **AWS EKS**, with the backend image published to ECR, nginx i
   </tr>
 </table>
 
+## Demo
+
+https://github.com/user-attachments/assets/ef333493-b819-4e40-bcf7-6009dd02c78f
+
 ## Observability
 
 <p align="center">
